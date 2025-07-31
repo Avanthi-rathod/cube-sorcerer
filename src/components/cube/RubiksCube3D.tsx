@@ -1,9 +1,10 @@
 // 3D Rubik's Cube Component using React Three Fiber
 
-import { useRef, useState } from 'react';
+import { useRef, useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Text } from '@react-three/drei';
-import { Mesh } from 'three';
+import { OrbitControls } from '@react-three/drei';
+import { Mesh, BoxGeometry } from 'three';
+import * as THREE from 'three';
 import { RubiksCube } from '@/utils/cubeModel';
 import { FaceColor } from '@/types/cube';
 
@@ -27,22 +28,21 @@ const FACE_COLORS = {
 function CubeFace({ position, rotation, color, faceIndex, cellIndex }: CubeFaceProps) {
   const meshRef = useRef<Mesh>(null);
   
+  console.log('Rendering CubeFace:', { position, color, faceColor: FACE_COLORS[color] });
+  
   return (
     <mesh ref={meshRef} position={position} rotation={rotation}>
-      <planeGeometry args={[0.9, 0.9]} />
+      <boxGeometry args={[0.95, 0.95, 0.05]} />
       <meshStandardMaterial 
         color={FACE_COLORS[color]} 
         transparent={false}
         metalness={0.1}
-        roughness={0.1}
+        roughness={0.2}
       />
-      <meshBasicMaterial 
-        color="#000000" 
-        wireframe 
-        transparent 
-        opacity={0.3}
-        attach="material-1"
-      />
+      <lineSegments>
+        <edgesGeometry args={[new THREE.BoxGeometry(0.95, 0.95, 0.05)]} />
+        <lineBasicMaterial color="#000000" linewidth={2} />
+      </lineSegments>
     </mesh>
   );
 }
@@ -181,38 +181,52 @@ export function RubiksCube3D({ cube, isAnimating = false, onCubeClick }: RubiksC
     return faces;
   };
 
+  console.log('RubiksCube3D rendering:', { cubeState: state, faceCount: generateFaces().length });
+
   return (
     <div className="w-full h-full">
-      <Canvas
-        camera={{ position: [5, 5, 5], fov: 60 }}
-        onCreated={({ gl }) => {
-          gl.setClearColor('#0a0a0a');
-        }}
-      >
-        <ambientLight intensity={0.4} />
-        <directionalLight position={[10, 10, 5]} intensity={1} />
-        <directionalLight position={[-10, -10, -5]} intensity={0.5} />
-        
-        <group
-          ref={groupRef}
-          onClick={onCubeClick}
-          onPointerOver={() => setIsHovered(true)}
-          onPointerOut={() => setIsHovered(false)}
-          scale={isHovered ? 1.05 : 1}
+      <Suspense fallback={
+        <div className="w-full h-full flex items-center justify-center bg-background border border-border rounded-lg">
+          <div className="text-center">
+            <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+            <p className="text-muted-foreground">Loading 3D Cube...</p>
+          </div>
+        </div>
+      }>
+        <Canvas
+          camera={{ position: [4, 4, 4], fov: 50 }}
+          onCreated={({ gl, camera }) => {
+            console.log('Canvas created:', { gl, camera });
+            gl.setClearColor('#0a0a0a');
+            camera.lookAt(0, 0, 0);
+          }}
         >
-          {generateFaces()}
-        </group>
-        
-        <OrbitControls
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
-          minDistance={3}
-          maxDistance={12}
-          autoRotate={isAnimating}
-          autoRotateSpeed={0.5}
-        />
-      </Canvas>
+          <ambientLight intensity={0.6} />
+          <directionalLight position={[10, 10, 5]} intensity={0.8} />
+          <directionalLight position={[-10, -10, -5]} intensity={0.4} />
+          <pointLight position={[0, 0, 10]} intensity={0.3} />
+          
+          <group
+            ref={groupRef}
+            onClick={onCubeClick}
+            onPointerOver={() => setIsHovered(true)}
+            onPointerOut={() => setIsHovered(false)}
+            scale={isHovered ? 1.05 : 1}
+          >
+            {generateFaces()}
+          </group>
+          
+          <OrbitControls
+            enablePan={true}
+            enableZoom={true}
+            enableRotate={true}
+            minDistance={2}
+            maxDistance={15}
+            autoRotate={isAnimating}
+            autoRotateSpeed={1}
+          />
+        </Canvas>
+      </Suspense>
     </div>
   );
 }

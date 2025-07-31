@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { RubiksCube3D } from '@/components/cube/RubiksCube3D';
+import { SimpleCube3D } from '@/components/cube/SimpleCube3D';
 import { AlgorithmPanel } from '@/components/solver/AlgorithmPanel';
 import { GameControls } from '@/components/game/GameControls';
 import { RubiksCube } from '@/utils/cubeModel';
@@ -270,11 +271,17 @@ const Index = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0 h-[500px]">
+                {/* Temporarily use SimpleCube3D for debugging */}
+                <div className="p-4">
+                  <SimpleCube3D />
+                </div>
+                {/* Original cube - currently debugging
                 <RubiksCube3D
                   cube={cube}
                   isAnimating={isAutoRotating}
                   onCubeClick={handleCubeClick}
                 />
+                */}
               </CardContent>
             </Card>
           </div>
